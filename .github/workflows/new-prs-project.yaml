@@ -1,0 +1,87 @@
+name: Move new PRs to project
+# Moves new PRs to the project board.
+
+on:
+  pull_request:
+    types: [opened]
+
+jobs:
+  automate-project-columns:
+    runs-on: ubuntu-latest
+    steps:
+      # This step gets all the project data required to
+      # build a GraphQL mutation that moves a new PR
+      # to the correct project column.
+      # We make use of the magic GITHUB_ENV environment variable
+      # to have these accessible across our workflow run.
+      - name: Get project data
+        id: project_data
+        env:
+          GITHUB_TOKEN: ${{ secrets.PAT }}
+          ORG: "icyphox"
+          PROJECT_NUMBER: 1
+        run: |
+          gh api graphql -f query='
+            query($org: String!, $num: Int!) {
+              user(login: $org){
+                projectNext(number: $num) {
+                  id
+                  fields(first: 20) {
+                    nodes {
+                      id
+                      name
+                      settings
+                    }
+                  }
+                }
+              }
+            }' -f org=$ORG -F num=$PROJECT_NUMBER > project_data.json
+
+          echo 'PROJECT_ID='$(jq -r '.data.user.projectNext.id' project_data.json) >> $GITHUB_ENV
+          echo 'STATUS_FIELD_ID='$(jq -r '.data.user.projectNext.fields.nodes[] | select(.name == "Status").id' project_data.json) >> $GITHUB_ENV
+          echo 'TODO_OPTION_ID='$(jq -r '.data.user.projectNext.fields.nodes[] | select(.name == "Status").settings | fromjson.options[] | select(.name=="Todo").id' project_data.json) >> $GITHUB_ENV
+
+      # We simply add the PR to the project.
+      # Setting the 'Status' field is done in the next step.
+      - name: Add PR to project
+        env:
+          GITHUB_TOKEN: ${{ secrets.PAT }}
+          PR_ID: ${{ github.event.pull_request.node_id }}
+        run: |
+          item_id="$( gh api graphql -f query='
+            mutation($project: ID!, $pr: ID!) {
+              addProjectNextItem(input: {
+                projectId: $project,
+                contentId: $pr
+                }) {
+                projectNextItem {
+                  id
+                }
+              }
+            }' -f project=$PROJECT_ID -f pr=$PR_ID --jq '.data.addProjectNextItem.projectNextItem.id')"
+
+          echo 'ITEM_ID='$item_id >> $GITHUB_ENV
+
+      # Set the relevant fields. Add as many as required.
+      - name: Set fields
+        env:
+          GITHUB_TOKEN: ${{ secrets.PAT }}
+        run: |
+          gh api graphql -f query='
+            mutation (
+              $project: ID!
+              $item: ID!
+              $status_field: ID!
+              $status_value: String!
+            ) {
+              updateProjectNextItemField(input: {
+                 projectId: $project
+                 itemId: $item
+                 fieldId: $status_field
+                 value: $status_value
+               }) {
+                 projectNextItem {
+                   id
+                 }
+               }
+            }' -f project=$PROJECT_ID -f item=$ITEM_ID -f status_field=$STATUS_FIELD_ID -f status_value=$TODO_OPTION_ID
