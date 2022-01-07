@@ -18,3 +18,4 @@ jobs:
           project: 9
           token: ${{ secrets.PLANNING_AUTOMATION_TOKEN }}
           org: ory-corp
+          todo_status: "Backlog"
