@@ -45,7 +45,7 @@ jobs:
       - name: Store open issue/PR list
         run: |
           full_repo="${{ github.event.inputs.repo }}"
-          IFS=$'\n' read -d "" -ra tmp <<< "${full_repo////$'\n'}"
+          tmp=(${full_repo//// })
           org="${tmp[0]}"
           repo="${tmp[1]}"
           gh api graphql -f query='
