@@ -10,7 +10,7 @@ on:
         description: Organization that owns the project
         required: true
       repo:
-        description: Repository to run migration on
+        description: Repository to run migration on (owner/repo format)
         required: true
 
 env:
@@ -44,6 +44,10 @@ jobs:
 
       - name: Store open issue/PR list
         run: |
+          full_repo="${{ github.event.inputs.repo }}"
+          IFS=$'\n' read -d "" -ra tmp <<< "${full_repo////$'\n'}"
+          org="${tmp[0]}"
+          repo="${tmp[1]}"
           gh api graphql -f query='
             query ($org: String!, $repo: String!) {
               repository(owner: $org, name: $repo) {
@@ -62,7 +66,7 @@ jobs:
                   }
                 }
               }
-          }' -f org=${{ github.event.inputs.org }} -f repo=${{ github.event.inputs.repo }} > data.json
+          }' -f org="$org" -f repo="$repo" > data.json
 
       - name: Extract issue/PR IDs and migrate
         run: |
