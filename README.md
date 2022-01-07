@@ -32,7 +32,7 @@ jobs:
     runs-on: ubuntu-latest
     name: Synchronize Issues and PRs
     steps:
-      - uses: ory-corp/planning-automation-action@master
+      - uses: ory-corp/planning-automation-action@main
         with:
           project: 9
           token: ${{ secrets.PLANNING_AUTOMATION_TOKEN }}
