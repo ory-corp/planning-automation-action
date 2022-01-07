@@ -12,6 +12,9 @@ on:
       repo:
         description: Repository to run migration on (owner/repo format)
         required: true
+      todo_status:
+        description: Name of the 'Todo' status on the project board
+        required: true
 
 env:
   GITHUB_TOKEN: ${{ secrets.PLANNING_AUTOMATION_TOKEN }}
@@ -40,7 +43,7 @@ jobs:
 
           echo 'PROJECT_ID='$(jq -r '.data.organization.projectNext.id' project_data.json) >> $GITHUB_ENV
           echo 'STATUS_FIELD_ID='$(jq -r '.data.organization.projectNext.fields.nodes[] | select(.name == "Status").id' project_data.json) >> $GITHUB_ENV
-          echo 'TODO_OPTION_ID='$(jq -r '.data.organization.projectNext.fields.nodes[] | select(.name == "Status").settings | fromjson.options[] | select(.name=="Todo").id' project_data.json) >> $GITHUB_ENV
+          echo 'TODO_OPTION_ID='$(jq -r '.data.organization.projectNext.fields.nodes[] | select(.name == "Status").settings | fromjson.options[] | select(.name=="${{ github.event.inputs.todo_status }}").id' project_data.json) >> $GITHUB_ENV
 
       - name: Store open issue/PR list
         run: |
