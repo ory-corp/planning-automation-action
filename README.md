@@ -35,7 +35,7 @@ jobs:
       - uses: ory-corp/planning-automation-action@master
         with:
           project: 9
-          token: ${{ secrets.PAT }}
+          token: ${{ secrets.PLANNING_AUTOMATION_TOKEN }}
           org: ory-corp
 ```
 

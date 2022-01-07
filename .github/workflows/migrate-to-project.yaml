@@ -14,7 +14,7 @@ on:
         required: true
 
 env:
-  GITHUB_TOKEN: ${{ secrets.PAT }}
+  GITHUB_TOKEN: ${{ secrets.PLANNING_AUTOMATION_TOKEN }}
 jobs:
   migrate:
     runs-on: ubuntu-latest

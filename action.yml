@@ -6,7 +6,7 @@ inputs:
     required: true
     default: 1
   token:
-    description: GitHub PAT with org:write
+    description: GitHub Token with org:write
     required: true
   org:
     description: Organization that owns the project
