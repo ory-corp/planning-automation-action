@@ -15,6 +15,6 @@ jobs:
     steps:
       - uses: ory-corp/planning-automation-action@main
         with:
-          project: 9
+          project: 5
           token: ${{ secrets.PLANNING_AUTOMATION_TOKEN }}
           org: ory-corp
