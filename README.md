@@ -30,7 +30,7 @@ permissions:
 jobs:
   automate:
     runs-on: ubuntu-latest
-    name: blah
+    name: Synchronize Issues and PRs
     steps:
       - uses: ory-corp/planning-automation-action@master
         with:
