@@ -1,4 +1,4 @@
-# actions-product-board
+# planning-automation-action
 > GitHub Action that helps automate GitHub Projects (beta)
 
 It reacts to `issues` and `pull_request` events, and does the following:
@@ -32,7 +32,7 @@ jobs:
     runs-on: ubuntu-latest
     name: blah
     steps:
-      - uses: ory-corp/actions-product-board@master
+      - uses: ory-corp/planning-automation-action@master
         with:
           project: 9
           token: ${{ secrets.PAT }}
