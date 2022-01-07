@@ -14,7 +14,8 @@ on:
         required: true
       todo_status:
         description: Name of the 'Todo' status on the project board
-        required: true
+        required: false
+        default: "Backlog"
 
 env:
   GITHUB_TOKEN: ${{ secrets.PLANNING_AUTOMATION_TOKEN }}
