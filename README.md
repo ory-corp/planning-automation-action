@@ -38,3 +38,13 @@ jobs:
           token: ${{ secrets.PAT }}
           org: ory-corp
 ```
+
+## Bulk migration workflow
+
+This repository also includes a one-off workflow that runs on a
+`workflow_dispatch` event to migrate all existing open issues and PRs in
+a repository to the project board. It takes the below inputs:
+
+- `project`: Project board number
+- `org`: The name of your organization
+- `repo`: Repository to run the migration on
