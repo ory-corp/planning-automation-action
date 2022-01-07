@@ -12,6 +12,10 @@ inputs:
     description: Organization that owns the project
     required: false
     default: ${{ github.repository_owner }}
+  todo_status:
+    description: Name of the 'Todo' status on the project board
+    required: false
+    default: "Todo"
   label:
     description: Initial label for new issues/PRs
     required: false
@@ -46,7 +50,7 @@ runs:
 
         echo 'PROJECT_ID='$(jq -r '.data.organization.projectNext.id' project_data.json) >> $GITHUB_ENV
         echo 'STATUS_FIELD_ID='$(jq -r '.data.organization.projectNext.fields.nodes[] | select(.name == "Status").id' project_data.json) >> $GITHUB_ENV
-        echo 'TODO_OPTION_ID='$(jq -r '.data.organization.projectNext.fields.nodes[] | select(.name == "Status").settings | fromjson.options[] | select(.name=="Todo").id' project_data.json) >> $GITHUB_ENV
+        echo 'TODO_OPTION_ID='$(jq -r '.data.organization.projectNext.fields.nodes[] | select(.name == "Status").settings | fromjson.options[] | select(.name=="${{ inputs.todo_status }}").id' project_data.json) >> $GITHUB_ENV
       env:
         GITHUB_TOKEN: ${{ inputs.token }}
         ORG: ${{ inputs.org }}
