@@ -16,6 +16,9 @@ on:
         description: Name of the 'Todo' status on the project board
         required: false
         default: "Needs Triage"
+      milestone:
+        description: Name of the Milestone to filter by
+        required: false
 
 env:
   GITHUB_TOKEN: ${{ secrets.PLANNING_AUTOMATION_TOKEN }}
@@ -59,6 +62,10 @@ jobs:
                   edges {
                     node {
                       id
+                      milestone {
+                        id
+                        title
+                      }
                     }
                   }
                 }
@@ -66,16 +73,28 @@ jobs:
                   edges {
                     node {
                       id
+                      milestone {
+                        id
+                        title
+                      }
                     }
                   }
                 }
               }
           }' -f org="$org" -f repo="$repo" > data.json
 
-      - name: Extract issue/PR IDs and migrate
+      - env:
+          MILESTONE: ${{ inputs.milestone }}
+        name: Extract issue/PR IDs and migrate
         run: |
+          if [[ "$MILESTONE" != "" ]]; then
+            ISSUE_IDS=($(jq -r '.data.repository.issues.edges[].node | select(.milestone.title == ${{ env.MILESTONE }}).id' -c data.json))
+            PR_IDS=($(jq -r '.data.repository.prs.edges[].node | select(.milestone.title == ${{ env.MILESTONE }}).id' -c data.json))
+          fi
           ISSUE_IDS=($(jq .data.repository.issues.edges[].node.id -c data.json))
           PR_IDS=($(jq .data.repository.prs.edges[].node.id -c data.json))
+
+
 
           migrate() {
             ISSUE_PR_ID="$1"
