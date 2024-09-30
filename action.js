@@ -10,6 +10,7 @@ let coreGlob
  * @param {number} projectNumber project ID as seen in project board URL
  * @param {string} statusName status field name to be set
  * @param {string} statusValue status name to be assigned
+ * @param {Boolean} includeEffort if true, set effort
  * @param {string} effortName effort field name to be set
  * @param {string} effortMapping JSON effort name - days map
  * @param {string} monthlyMilestoneName monthly milestone field name to be set
@@ -22,6 +23,7 @@ module.exports = async (
     projectNumber,
     statusName = 'status',
     statusValue = 'todo',
+    includeEffort = true,
     effortName = 'effort',
     effortMapping = '{"two days": 2, "workweek": 5}',
     monthlyMilestoneName = 'monthly milestone',
@@ -111,7 +113,10 @@ module.exports = async (
 
         // assign author if a PR
         const assigneeData = await github.rest.users.getByUsername({
-            username: context.actor
+            // not implemented in ('@actions/github').context
+            // deserialized JSON from GITHUB_EVENT_PATH (/github/workflow/event.json)
+            // https://docs.github.com/en/webhooks/webhook-events-and-payloads?actionType=opened#pull_request
+            username: context.payload.pull_request.user.login
         });
         const assignPrToUserQuery = fs.readFileSync(`.github/actions/planning-automation-action/graphql/prAssignUser.gql`, 'utf8');
         const assignPrToUserParams = {
@@ -125,48 +130,50 @@ module.exports = async (
         };
 
         // estimate effort if a PR
-        // get PR data
-        const prCommitDataQuery = fs.readFileSync(`.github/actions/planning-automation-action/graphql/prCommitData.gql`, 'utf8');
-        const prCommitDataParams = {
-            owner: context.repo.owner,
-            name: context.repo.repo,
-            number: context.payload.pull_request.number
-        };
-        let prCommitData
-        try {
-            ({ repository: { pullRequest: { commits: { nodes: prCommitData } } } } = await github.graphql(prCommitDataQuery, prCommitDataParams));
-        } catch (error) {
-            bail(error.message);
-        };
-        // get weekdays since PR's first commit
-        let prCreatedAt = new Date()
-        prCommitData.forEach(commit => {
-            const commitDate = new Date(commit.commit.authoredDate)
-            if (commitDate < prCreatedAt) {
-                prCreatedAt = commitDate
-            }
-        });
-        const workingDaysSinceCreated = countWorkingDaysSince(new Date(prCreatedAt));
-
-        // map days spent to effort size pattern
-        let milestonePattern;
-        for (const [pattern, dayCount] of Object.entries(JSON.parse(effortMapping))) {
-            if (workingDaysSinceCreated < dayCount) {
-                milestonePattern = pattern;
-                break;
-            }
-        };
-
-        // select effort ID based on pattern
-        projectFieldOptions.forEach(field => {
-            if (field.name === effortName) {
-                effortFieldId = field.id;
-                field.options.forEach(effort => {
-                    if (effort.name.toLowerCase().includes(milestonePattern.toLowerCase()))
-                        effortValueId = effort.id;
-                });
+        if (includeEffort) {
+            // get PR data
+            const prCommitDataQuery = fs.readFileSync(`.github/actions/planning-automation-action/graphql/prCommitData.gql`, 'utf8');
+            const prCommitDataParams = {
+                owner: context.repo.owner,
+                name: context.repo.repo,
+                number: context.payload.pull_request.number
             };
-        });
+            let prCommitData
+            try {
+                ({ repository: { pullRequest: { commits: { nodes: prCommitData } } } } = await github.graphql(prCommitDataQuery, prCommitDataParams));
+            } catch (error) {
+                bail(error.message);
+            };
+            // get weekdays since PR's first commit
+            let prCreatedAt = new Date()
+            prCommitData.forEach(commit => {
+                const commitDate = new Date(commit.commit.authoredDate)
+                if (commitDate < prCreatedAt) {
+                    prCreatedAt = commitDate
+                }
+            });
+            const workingDaysSinceCreated = countWorkingDaysSince(new Date(prCreatedAt));
+
+            // map days spent to effort size pattern
+            let milestonePattern;
+            for (const [pattern, dayCount] of Object.entries(JSON.parse(effortMapping))) {
+                if (workingDaysSinceCreated < dayCount) {
+                    milestonePattern = pattern;
+                    break;
+                }
+            };
+
+            // select effort ID based on pattern
+            projectFieldOptions.forEach(field => {
+                if (field.name === effortName) {
+                    effortFieldId = field.id;
+                    field.options.forEach(effort => {
+                        if (effort.name.toLowerCase().includes(milestonePattern.toLowerCase()))
+                            effortValueId = effort.id;
+                    });
+                };
+            });
+        };
     };
 
     // set milestones & effort
@@ -178,7 +185,7 @@ module.exports = async (
         status_value: statusValueId,
         effort_field: effortFieldId,
         effort_value: effortValueId,
-        effort_included: isPr,
+        effort_included: isPr && includeEffort,
         primary_milestone_field: monthlyMilestoneFieldId,
         primary_milestone_value: monthlyMilestoneValueId,
         secondary_milestone_field: quarterlyMilestoneFieldId,
@@ -201,7 +208,7 @@ function bail(msg) {
 
 /**
  * @param {Date} startDate date to count from
- * @returns {number}       number of working days since input date
+ * @returns {number} number of working days since input date
  */
 function countWorkingDaysSince(startDate) {
     const currentDate = new Date();
@@ -218,7 +225,7 @@ function countWorkingDaysSince(startDate) {
 
 /**
  * @param {{startDate: string, duration: number, id: string}[]} iterations list of Iterations from GH API
- * @returns {string}                                                       node_id of iteration entry matching current date
+ * @returns {string} node_id of iteration entry matching current date
  */
 function getCurrentIteration(iterations) {
     let monthlyMilestoneValueId

@@ -16,12 +16,19 @@ inputs:
   statusName:
     description: Name of the 'status' field on the project board
     required: false
+    default: status
   statusValue:
     description: Name of the 'todo' status on the project board
     required: false
+    default: todo
+  includeEffort:
+    description: if true, set effort
+    required: false
+    default: 'true'
   effortName:
     description: Name of the 'effort' field on the project board
     required: false
+    default: effort
   effortMapping:
     description: |
       JSON string with map where: 
@@ -29,12 +36,15 @@ inputs:
         - number value is maximum duration in days
       for example: {"two days": 2, "workweek": 5}
     required: false
+    default: '{"two days": 2, "workweek": 5}'
   monthlyMilestoneName:
     description: Name of the 'monthly milestone' field on the project board
     required: false
+    default: monthly milestone
   quarterlyMilestoneName:
     description: Name of the 'quarterly milestone' field on the project board
     required: false
+    default: quarterly milestone
 
 runs:
   using: "composite"
@@ -67,12 +77,13 @@ runs:
           await script(
             github,
             context,
-            core
-            ${{ inputs.project && format( ',projectNumber={0}', inputs.project ) }}
-            ${{ inputs.statusName && format( ',statusName=`{0}`', inputs.statusName ) }}
-            ${{ inputs.statusValue && format( ',statusValue=`{0}`', inputs.statusValue ) }}
-            ${{ inputs.effortName && format( ',effortName=`{0}`', inputs.effortName ) }}
-            ${{ inputs.effortMapping && format( ',effortMapping=`{0}`', inputs.effortMapping ) }}
-            ${{ inputs.monthlyMilestoneName && format( ',monthlyMilestoneName=`{0}`', inputs.monthlyMilestoneName ) }}
-            ${{ inputs.quarterlyMilestoneName && format( ',quarterlyMilestoneName=`{0}`', inputs.quarterlyMilestoneName ) }}
+            core,
+            ${{ inputs.project }},
+            `${{ inputs.statusName }}`,
+            `${{ inputs.statusValue }}`,
+            ${{ inputs.includeEffort }},
+            `${{ inputs.effortName }}`,
+            `${{ inputs.effortMapping }}`,
+            `${{ inputs.monthlyMilestoneName }}`,
+            `${{ inputs.quarterlyMilestoneName }}`
           )

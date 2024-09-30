@@ -1,5 +1,8 @@
 {
   "pull_request": {
+    "user": {
+      "login": "ory-bot"
+    },
     "number": 349,
     "head": {
       "ref": "prBranch"
