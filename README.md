@@ -56,5 +56,6 @@ jobs:
 
 ## Testing
 
-Create files `.secrets` and `.env` based on sample files and adjust prData.json so that the test targets real PR in a real project.
+This action can be run from localhost against existing PR, repo and project to confirm that it works as intended.
+Create files `.secrets` and `.env` based on sample files and adjust prData.json
 Run `make test`

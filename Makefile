@@ -4,6 +4,7 @@ SHELL=/bin/bash
 deps:
 	npm install @actions/github @actions/core
 	ls test/.secrets || echo "GITHUB_TOKEN=\"change_me\"" > test/.secrets
+	act --version || brew install act
 
 .PHONY: test
 test: deps
