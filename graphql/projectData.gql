@@ -1,0 +1,33 @@
+query ($owner: String!, $number: Int!) {
+  organization(login: $owner) {
+    projectV2(number: $number) {
+      id
+      fields(first: 100) {
+        nodes {
+          ... on ProjectV2SingleSelectField {
+            id
+            name
+            __typename
+            options {
+              id
+              name
+            }
+          }
+          ... on ProjectV2IterationField {
+            id
+            name
+            __typename
+            configuration {
+              iterations {
+                id
+                title
+                startDate
+                duration
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

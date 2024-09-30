@@ -1,18 +1,27 @@
 # planning-automation-action
-> GitHub Action that helps automate GitHub Projects (beta)
+
+> GitHub Action that helps automate GitHub Projects
 
 It reacts to `issues` and `pull_request` events, and does the following:
 
-- Sets initial labels
+- Sets initial label
 - Adds the issue/PR to the configured project board
-- Sets the status of the ticket to Todo
+- Sets the status, effort and milestones
 
-### Inputs
+## Inputs
 
 - `project`: Project board number (`github.com/orgs/foo/projects/N`)
 - `token`: A personal access token with write:org capabilities.
-- `org`: The name of your organization. Defaults to `github.repository_owner`.
-- `label`: Initial label for new issues/PRs. Defaults to `needs triage`.
+- `todo_label`: Initial label for new issues/PRs. Defaults to `needs triage`.
+- `newItemStatus`: Name of the 'todo' status on the project board. Defaults to `needs triage`.
+- `statusName`: Name of the 'status' field on the project board. Defaults to `status`.
+- `effortName`: Name of the 'effort' field on the project board `effort`.
+- `monthlyMilestoneName`: Name of the 'monthly milestone' field on the project board. Defaults to `monthly milestone`.
+- `quarterlyMilestoneName`: Name of the 'quarterly milestone' field on the project board. Defaults to `quarterly milestone`.
+- `effortMapping`: JSON string with map where:
+  - string key is a valid 'effort' field value
+  - number value is maximum duration in days
+  for example: {"two days": 2, "workweek": 5}. Defaults to `{"two days": 2, "workweek": 5}`.
 
 ### Complete usage
 
@@ -36,15 +45,16 @@ jobs:
         with:
           project: 9
           token: ${{ secrets.PLANNING_AUTOMATION_TOKEN }}
-          org: ory-corp
+          todo_label: needs triage
+          newItemStatus: needs triage
+          statusName: status
+          effortName: effort
+          monthlyMilestoneName: monthly milestone
+          quarterlyMilestoneName: quarterly milestone
+          effortMapping: '{"two days": 2, "workweek": 5}'
 ```
 
-## Bulk migration workflow
+## Testing
 
-This repository also includes a one-off workflow that runs on a
-`workflow_dispatch` event to migrate all existing open issues and PRs in
-a repository to the project board. It takes the below inputs:
-
-- `project`: Project board number
-- `org`: The name of your organization
-- `repo`: Repository to run the migration on
+Create files `.secrets` and `.env` based on sample files and adjust prData.json so that the test targets real PR in a real project.
+Run `make test`

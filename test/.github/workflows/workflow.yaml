@@ -1,0 +1,32 @@
+name: test-github-script
+# This is a test workflow to debug/develop a github-script action
+
+on:
+  workflow_dispatch:
+  pull_request:
+jobs:
+  test-github-script:
+    name: Test gitHub-script
+    timeout-minutes: 15
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - id: install_deps
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          sudo apt update
+          sudo apt install gh -y
+      - id: test
+        uses: ./.github/actions/planning-automation-action
+        with:
+          project: 27
+          token: ${{ secrets.GITHUB_TOKEN }}
+          label: needs triage
+          newItemStatus: ${{ env.newItemStatus }}
+          statusName: ${{ env.statusName }}
+          effortName: ${{ env.effortName }}
+          monthlyMilestoneName: ${{ env.monthlyMilestoneName }}
+          quarterlyMilestoneName: ${{ env.quarterlyMilestoneName }}
+          effortMapping: ${{ env.effortMapping }}

@@ -1,0 +1,11 @@
+{
+  "pull_request": {
+    "number": 349,
+    "head": {
+      "ref": "prBranch"
+    },
+    "base": {
+      "ref": "master"
+    }
+  }
+}
