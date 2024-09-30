@@ -8,19 +8,24 @@ let coreGlob
  * @param {import('@actions/github').context} context
  * @param {typeof import('@actions/core')} core
  * @param {number} projectNumber project ID as seen in project board URL
- * @param {string} newItemStatus status name to be assigned
+ * @param {string} statusName status field name to be set
+ * @param {string} statusValue status name to be assigned
+ * @param {string} effortName effort field name to be set
+ * @param {string} effortMapping JSON effort name - days map
+ * @param {string} monthlyMilestoneName monthly milestone field name to be set
+ * @param {string} quarterlyMilestoneName quarterly milestone field name to be set
  */
 module.exports = async (
     github,
     context,
     core,
     projectNumber,
-    newItemStatus = 'todo',
     statusName = 'status',
+    statusValue = 'todo',
     effortName = 'effort',
+    effortMapping = '{"two days": 2, "workweek": 5}',
     monthlyMilestoneName = 'monthly milestone',
     quarterlyMilestoneName = 'quarterly milestone',
-    effortMapping = '{"two days": 2, "workweek": 5}',
 ) => {
     coreGlob = core
     if (typeof projectNumber !== 'number')
@@ -53,7 +58,7 @@ module.exports = async (
         if (field.name === statusName) {
             statusFieldId = field.id;
             field.options.forEach(status => {
-                if (status.name.toLowerCase().includes(newItemStatus.toLowerCase()))
+                if (status.name.toLowerCase().includes(statusValue.toLowerCase()))
                     statusValueId = status.id;
             });
         };

@@ -13,15 +13,15 @@ It reacts to `issues` and `pull_request` events, and does the following:
 - `project`: Project board number (`github.com/orgs/foo/projects/N`)
 - `token`: A personal access token with write:org capabilities.
 - `todo_label`: Initial label for new issues/PRs. Defaults to `needs triage`.
-- `newItemStatus`: Name of the 'todo' status on the project board. Defaults to `needs triage`.
 - `statusName`: Name of the 'status' field on the project board. Defaults to `status`.
+- `statusValue`: Name of the 'todo' status on the project board. Defaults to `needs triage`.
 - `effortName`: Name of the 'effort' field on the project board `effort`.
-- `monthlyMilestoneName`: Name of the 'monthly milestone' field on the project board. Defaults to `monthly milestone`.
-- `quarterlyMilestoneName`: Name of the 'quarterly milestone' field on the project board. Defaults to `quarterly milestone`.
 - `effortMapping`: JSON string with map where:
   - string key is a valid 'effort' field value
   - number value is maximum duration in days
   for example: {"two days": 2, "workweek": 5}. Defaults to `{"two days": 2, "workweek": 5}`.
+- `monthlyMilestoneName`: Name of the 'monthly milestone' field on the project board. Defaults to `monthly milestone`.
+- `quarterlyMilestoneName`: Name of the 'quarterly milestone' field on the project board. Defaults to `quarterly milestone`.
 
 ### Complete usage
 
@@ -46,12 +46,12 @@ jobs:
           project: 9
           token: ${{ secrets.PLANNING_AUTOMATION_TOKEN }}
           todo_label: needs triage
-          newItemStatus: needs triage
           statusName: status
+          statusValue: needs triage
           effortName: effort
+          effortMapping: '{"two days": 2, "workweek": 5}'
           monthlyMilestoneName: monthly milestone
           quarterlyMilestoneName: quarterly milestone
-          effortMapping: '{"two days": 2, "workweek": 5}'
 ```
 
 ## Testing

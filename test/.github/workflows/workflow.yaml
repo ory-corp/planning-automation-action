@@ -24,9 +24,9 @@ jobs:
           project: 27
           token: ${{ secrets.GITHUB_TOKEN }}
           label: needs triage
-          newItemStatus: ${{ env.newItemStatus }}
           statusName: ${{ env.statusName }}
+          statusValue: ${{ env.newItemStatus }}
           effortName: ${{ env.effortName }}
+          effortMapping: ${{ env.effortMapping }}
           monthlyMilestoneName: ${{ env.monthlyMilestoneName }}
           quarterlyMilestoneName: ${{ env.quarterlyMilestoneName }}
-          effortMapping: ${{ env.effortMapping }}
