@@ -58,7 +58,7 @@ runs:
         echo "---"
         pwd
         echo "---"
-        tree -a
+        find . -iname "action.js"
     - name: Initial labeling
       uses: andymckay/labeler@e6c4322d0397f3240f0e7e30a33b5c5df2d39e90
       with:
