@@ -61,6 +61,9 @@ runs:
         find . -iname "action.js"
         echo "---"
         find ${{ github.action_path }} -iname "action.js"
+        echo "---"
+        echo "${{ github.action_path }}"
+        echo "---"
     - name: Initial labeling
       uses: andymckay/labeler@e6c4322d0397f3240f0e7e30a33b5c5df2d39e90
       with:
@@ -85,5 +88,6 @@ runs:
             `${{ inputs.effortName }}`,
             `${{ inputs.effortMapping }}`,
             `${{ inputs.monthlyMilestoneName }}`,
-            `${{ inputs.quarterlyMilestoneName }}`
+            `${{ inputs.quarterlyMilestoneName }}`,
+            `${{ github.action_path }}`
           )

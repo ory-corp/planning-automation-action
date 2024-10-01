@@ -15,6 +15,7 @@ let coreGlob
  * @param {string} effortMapping JSON effort name - days map
  * @param {string} monthlyMilestoneName monthly milestone field name to be set
  * @param {string} quarterlyMilestoneName quarterly milestone field name to be set
+ * @param {string} basePath base action path on runner FS
  */
 module.exports = async (
     github,
@@ -28,6 +29,7 @@ module.exports = async (
     effortMapping = '{"two days": 2, "workweek": 5}',
     monthlyMilestoneName = 'monthly milestone',
     quarterlyMilestoneName = 'quarterly milestone',
+    basePath = '.'
 ) => {
     coreGlob = core
     if (typeof projectNumber !== 'number')
@@ -35,7 +37,7 @@ module.exports = async (
     const fs = require('fs');
 
     // get project data
-    const projectDataQuery = fs.readFileSync(`graphql/projectData.gql`, 'utf8');
+    const projectDataQuery = fs.readFileSync(`${basePath}/graphql/projectData.gql`, 'utf8');
     const projectDataParams = {
         owner: context.repo.owner,
         number: projectNumber
@@ -93,7 +95,7 @@ module.exports = async (
 
     if (typeof prIssueId === 'undefined')
         bail("couldn't get ID of PR/Issue");
-    const assignItemQuery = fs.readFileSync(`graphql/projectAssignPrIssue.gql`, 'utf8');
+    const assignItemQuery = fs.readFileSync(`${basePath}/graphql/projectAssignPrIssue.gql`, 'utf8');
     const assignItemParams = {
         project: projectId,
         id: prIssueId
@@ -118,7 +120,7 @@ module.exports = async (
             // https://docs.github.com/en/webhooks/webhook-events-and-payloads?actionType=opened#pull_request
             username: context.payload.pull_request.user.login
         });
-        const assignPrToUserQuery = fs.readFileSync(`graphql/prAssignUser.gql`, 'utf8');
+        const assignPrToUserQuery = fs.readFileSync(`${basePath}/graphql/prAssignUser.gql`, 'utf8');
         const assignPrToUserParams = {
             assignee: assigneeData.data.node_id,
             id: prIssueId
@@ -132,7 +134,7 @@ module.exports = async (
         // estimate effort if a PR
         if (includeEffort) {
             // get PR data
-            const prCommitDataQuery = fs.readFileSync(`graphql/prCommitData.gql`, 'utf8');
+            const prCommitDataQuery = fs.readFileSync(`${basePath}/graphql/prCommitData.gql`, 'utf8');
             const prCommitDataParams = {
                 owner: context.repo.owner,
                 name: context.repo.repo,
@@ -177,7 +179,7 @@ module.exports = async (
     };
 
     // set milestones & effort
-    const assignProjectFieldsQuery = fs.readFileSync(`graphql/projectItemAssignFields.gql`, 'utf8');
+    const assignProjectFieldsQuery = fs.readFileSync(`${basePath}/graphql/projectItemAssignFields.gql`, 'utf8');
     const assignProjectFieldsParams = {
         project: projectId,
         item: projectItemId,
