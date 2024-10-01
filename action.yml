@@ -59,6 +59,8 @@ runs:
         pwd
         echo "---"
         find . -iname "action.js"
+        echo "---"
+        find ${{ github.action_path }} -iname "action.js"
     - name: Initial labeling
       uses: andymckay/labeler@e6c4322d0397f3240f0e7e30a33b5c5df2d39e90
       with:
@@ -71,7 +73,7 @@ runs:
       with:
         github-token: ${{ inputs.token }}
         script: |
-          const script = require('action.js')
+          const script = require('${{ github.action_path }}/action.js')
           await script(
             github,
             context,
