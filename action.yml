@@ -49,24 +49,18 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - name: Initial labeling - PR
-      if: ${{ github.event_name == 'pull_request' }}
+    - name: debug
       shell: bash
-      env:
-        GITHUB_TOKEN: ${{ inputs.token }}
       run: |
-        gh pr view ${{ github.event.pull_request.number }} --json 'assignees' | jq -e '(.assignees | length) == 0' || exit 0
-        gh pr view ${{ github.event.pull_request.number }} --json 'labels' | jq -e '(.labels | length) == 0' || exit 0
-        gh pr edit ${{ github.event.pull_request.number }} --add-label "${{ inputs.todo_label }}"
-    - name: Initial labeling - Issue
-      if: ${{ github.event_name == 'issues' }}
-      shell: bash
-      env:
-        GITHUB_TOKEN: ${{ inputs.token }}
-      run: |
-        gh issue view ${{ github.event.pull_request.number }} --json 'assignees' | jq -e '(.assignees | length) != 0' || exit 0
-        gh issue view ${{ github.event.pull_request.number }} --json 'labels' | jq -e '(.labels | length) != 0' || exit 0
-        gh issue edit ${{ github.event.pull_request.number }} --add-label "${{ inputs.todo_label }}"
+        echo "${GITHUB_EVENT_PATH}"
+        echo "---"
+        cat "${GITHUB_EVENT_PATH}"
+    - name: Initial labeling
+      uses: andymckay/labeler@e6c4322d0397f3240f0e7e30a33b5c5df2d39e90
+      with:
+        add-labels: "${{ inputs.todo_label }}"
+        ignore-if-assigned: true
+        ignore-if-labeled: true
     - name: Fetch project data
       uses: actions/github-script@v7
       id: runscript
