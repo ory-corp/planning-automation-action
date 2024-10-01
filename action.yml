@@ -73,7 +73,7 @@ runs:
       with:
         github-token: ${{ inputs.token }}
         script: |
-          const script = require('.github/actions/planning-automation-action/action.js')
+          const script = require('action.js')
           await script(
             github,
             context,

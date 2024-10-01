@@ -35,7 +35,7 @@ module.exports = async (
     const fs = require('fs');
 
     // get project data
-    const projectDataQuery = fs.readFileSync(`.github/actions/planning-automation-action/graphql/projectData.gql`, 'utf8');
+    const projectDataQuery = fs.readFileSync(`graphql/projectData.gql`, 'utf8');
     const projectDataParams = {
         owner: context.repo.owner,
         number: projectNumber
@@ -93,7 +93,7 @@ module.exports = async (
 
     if (typeof prIssueId === 'undefined')
         bail("couldn't get ID of PR/Issue");
-    const assignItemQuery = fs.readFileSync(`.github/actions/planning-automation-action/graphql/projectAssignPrIssue.gql`, 'utf8');
+    const assignItemQuery = fs.readFileSync(`graphql/projectAssignPrIssue.gql`, 'utf8');
     const assignItemParams = {
         project: projectId,
         id: prIssueId
@@ -118,7 +118,7 @@ module.exports = async (
             // https://docs.github.com/en/webhooks/webhook-events-and-payloads?actionType=opened#pull_request
             username: context.payload.pull_request.user.login
         });
-        const assignPrToUserQuery = fs.readFileSync(`.github/actions/planning-automation-action/graphql/prAssignUser.gql`, 'utf8');
+        const assignPrToUserQuery = fs.readFileSync(`graphql/prAssignUser.gql`, 'utf8');
         const assignPrToUserParams = {
             assignee: assigneeData.data.node_id,
             id: prIssueId
@@ -132,7 +132,7 @@ module.exports = async (
         // estimate effort if a PR
         if (includeEffort) {
             // get PR data
-            const prCommitDataQuery = fs.readFileSync(`.github/actions/planning-automation-action/graphql/prCommitData.gql`, 'utf8');
+            const prCommitDataQuery = fs.readFileSync(`graphql/prCommitData.gql`, 'utf8');
             const prCommitDataParams = {
                 owner: context.repo.owner,
                 name: context.repo.repo,
@@ -177,7 +177,7 @@ module.exports = async (
     };
 
     // set milestones & effort
-    const assignProjectFieldsQuery = fs.readFileSync(`.github/actions/planning-automation-action/graphql/projectItemAssignFields.gql`, 'utf8');
+    const assignProjectFieldsQuery = fs.readFileSync(`graphql/projectItemAssignFields.gql`, 'utf8');
     const assignProjectFieldsParams = {
         project: projectId,
         item: projectItemId,
