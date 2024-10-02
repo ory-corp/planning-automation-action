@@ -48,10 +48,10 @@ module.exports = async (
     } catch (error) {
         bail(error.message);
     };
-    if (typeof projectData.organization.projectV2.fields.nodes === 'undefined')
+    if (!projectData.organization.projectV2.fields.nodes)
         bail("couldn't retrieve project fields")
     const projectFieldOptions = projectData.organization.projectV2.fields.nodes;
-    if (typeof projectData.organization.projectV2.id === 'undefined')
+    if (!projectData.organization.projectV2.id)
         bail("couldn't retrieve project graphql id")
     const projectId = projectData.organization.projectV2.id;
 
@@ -93,7 +93,7 @@ module.exports = async (
     // move pr/issue to project
     const prIssueId = await getPrIssueId(github, context)
 
-    if (typeof prIssueId === 'undefined')
+    if (!prIssueId)
         bail("couldn't get ID of PR/Issue");
     const assignItemQuery = fs.readFileSync(`${basePath}/graphql/projectAssignPrIssue.gql`, 'utf8');
     const assignItemParams = {
@@ -248,7 +248,7 @@ function getCurrentIteration(iterations) {
  * @returns {Promise<string>} node_id of PR or Issue that triggered calling workflow
  */
 async function getPrIssueId(github, context) {
-    if (typeof context.payload.pull_request !== 'undefined') {
+    if (context.payload.pull_request) {
         const apiPullRequest = await github.rest.pulls.get({
             owner: context.repo.owner,
             repo: context.repo.repo,
@@ -256,7 +256,7 @@ async function getPrIssueId(github, context) {
         });
         return apiPullRequest.data.node_id;
     }
-    if (typeof context.payload.issue !== 'undefined') {
+    if (context.payload.issue) {
         const apiIssue = await github.rest.issues.get({
             owner: context.repo.owner,
             repo: context.repo.repo,
