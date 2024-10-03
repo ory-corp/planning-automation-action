@@ -90,29 +90,35 @@ module.exports = async (
         };
     });
 
-    // move pr/issue to project
-    const prIssueId = await getPrIssueId(github, context)
+    // is it a PR or an Issue
+    let isPr = false;
+    if (context.eventName === 'pull_request')
+        isPr = true;
 
+    // get PR / Issue id
+    const prIssueId = await getPrIssueId(github, context)
     if (!prIssueId)
         bail("couldn't get ID of PR/Issue");
-    const assignItemQuery = fs.readFileSync(`${basePath}/graphql/projectAssignPrIssue.gql`, 'utf8');
-    const assignItemParams = {
-        project: projectId,
-        id: prIssueId
-    };
+
+    // move Issue to project
     let projectItemId
-    try {
-        ({ addProjectV2ItemById: { item: { id: projectItemId } } } = await github.graphql(assignItemQuery, assignItemParams));
-    } catch (error) {
-        bail(error.message);
+    if (!isPr) {
+        const assignItemQuery = fs.readFileSync(`${basePath}/graphql/projectAssignPrIssue.gql`, 'utf8');
+        const assignItemParams = {
+            project: projectId,
+            id: prIssueId
+        };
+        try {
+            ({ addProjectV2ItemById: { item: { id: projectItemId } } } = await github.graphql(assignItemQuery, assignItemParams));
+        } catch (error) {
+            bail(error.message);
+        };
     };
 
     let effortFieldId
     let effortValueId
-    let isPr = false
-    if (context.eventName === 'pull_request') {
-        isPr = true
-
+    let isDraftPr
+    if (isPr) {
         // assign author if a PR
         const assigneeData = await github.rest.users.getByUsername({
             // not implemented in ('@actions/github').context
@@ -142,61 +148,81 @@ module.exports = async (
             };
             let prCommitData
             try {
-                ({ repository: { pullRequest: { commits: { nodes: prCommitData } } } } = await github.graphql(prCommitDataQuery, prCommitDataParams));
+                let prAllData = await github.graphql(prCommitDataQuery, prCommitDataParams)
+                prCommitData = prAllData.repository.pullRequest.commits.nodes
+                isDraftPr = prAllData.repository.pullRequest.isDraft
             } catch (error) {
                 bail(error.message);
             };
-            // get weekdays since PR's first commit
-            let prCreatedAt = new Date()
-            prCommitData.forEach(commit => {
-                const commitDate = new Date(commit.commit.authoredDate)
-                if (commitDate < prCreatedAt) {
-                    prCreatedAt = commitDate
-                }
-            });
-            const workingDaysSinceCreated = countWorkingDaysSince(new Date(prCreatedAt));
 
-            // map days spent to effort size pattern
-            let milestonePattern;
-            for (const [pattern, dayCount] of Object.entries(JSON.parse(effortMapping))) {
-                if (workingDaysSinceCreated < dayCount) {
-                    milestonePattern = pattern;
-                    break;
-                }
-            };
-
-            // select effort ID based on pattern
-            projectFieldOptions.forEach(field => {
-                if (field.name === effortName) {
-                    effortFieldId = field.id;
-                    field.options.forEach(effort => {
-                        if (effort.name.toLowerCase().includes(milestonePattern.toLowerCase()))
-                            effortValueId = effort.id;
-                    });
+            // move PR to project
+            if (!isDraftPr) {
+                const assignItemQuery = fs.readFileSync(`${basePath}/graphql/projectAssignPrIssue.gql`, 'utf8');
+                const assignItemParams = {
+                    project: projectId,
+                    id: prIssueId
                 };
-            });
+                try {
+                    ({ addProjectV2ItemById: { item: { id: projectItemId } } } = await github.graphql(assignItemQuery, assignItemParams));
+                } catch (error) {
+                    bail(error.message);
+                };
+
+
+                // get weekdays since PR's first commit
+                let prCreatedAt = new Date()
+                prCommitData.forEach(commit => {
+                    const commitDate = new Date(commit.commit.authoredDate)
+                    if (commitDate < prCreatedAt) {
+                        prCreatedAt = commitDate
+                    }
+                });
+                const workingDaysSinceCreated = countWorkingDaysSince(new Date(prCreatedAt));
+
+                // map days spent to effort size pattern
+                let milestonePattern;
+                for (const [pattern, dayCount] of Object.entries(JSON.parse(effortMapping))) {
+                    if (workingDaysSinceCreated < dayCount) {
+                        milestonePattern = pattern;
+                        break;
+                    }
+                };
+
+                // select effort ID based on pattern
+                projectFieldOptions.forEach(field => {
+                    if (field.name === effortName) {
+                        effortFieldId = field.id;
+                        field.options.forEach(effort => {
+                            if (effort.name.toLowerCase().includes(milestonePattern.toLowerCase()))
+                                effortValueId = effort.id;
+                        });
+                    };
+                });
+            };
         };
     };
 
     // set milestones & effort
-    const assignProjectFieldsQuery = fs.readFileSync(`${basePath}/graphql/projectItemAssignFields.gql`, 'utf8');
-    const assignProjectFieldsParams = {
-        project: projectId,
-        item: projectItemId,
-        status_field: statusFieldId,
-        status_value: statusValueId,
-        effort_field: effortFieldId,
-        effort_value: effortValueId,
-        effort_included: isPr && includeEffort,
-        primary_milestone_field: monthlyMilestoneFieldId,
-        primary_milestone_value: monthlyMilestoneValueId,
-        secondary_milestone_field: quarterlyMilestoneFieldId,
-        secondary_milestone_value: quarterlyMilestoneValueId
-    };
-    try {
-        await github.graphql(assignProjectFieldsQuery, assignProjectFieldsParams);
-    } catch (error) {
-        bail(error.message);
+    if (!isPr || (isPr && !isDraftPr)) {
+        const assignProjectFieldsQuery = fs.readFileSync(`${basePath}/graphql/projectItemAssignFields.gql`, 'utf8');
+        const assignProjectFieldsParams = {
+            project: projectId,
+            item: projectItemId,
+            status_field: statusFieldId,
+            status_value: statusValueId,
+            effort_field: effortFieldId,
+            effort_value: effortValueId,
+            effort_included: isPr && includeEffort,
+            primary_milestone_field: monthlyMilestoneFieldId,
+            primary_milestone_value: monthlyMilestoneValueId,
+            secondary_milestone_field: quarterlyMilestoneFieldId,
+            secondary_milestone_value: quarterlyMilestoneValueId
+        };
+        try {
+            await github.graphql(assignProjectFieldsQuery, assignProjectFieldsParams);
+        } catch (error) {
+            bail(error.message);
+        };
     };
 }
 
