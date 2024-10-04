@@ -2,6 +2,9 @@ name: "Project Board Automation"
 description: "Automate GitHub Projects with ease"
 
 inputs:
+  organization:
+    description: GitHub organization
+    required: false
   project:
     description: Project board number
     required: true
@@ -67,6 +70,7 @@ runs:
             github,
             context,
             core,
+            `${{ inputs.organization }}`,
             ${{ inputs.project }},
             `${{ inputs.statusName }}`,
             `${{ inputs.statusValue }}`,
