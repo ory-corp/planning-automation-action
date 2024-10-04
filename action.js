@@ -7,6 +7,7 @@ let coreGlob
  * @param {import('@octokit/core').Octokit & {rest : import('@octokit/plugin-rest-endpoint-methods/dist-types/generated/method-types').RestEndpointMethods }} github
  * @param {import('@actions/github').context} context
  * @param {typeof import('@actions/core')} core
+ * @param {string} organization GitHub organization name
  * @param {number} projectNumber project ID as seen in project board URL
  * @param {string} statusName status field name to be set
  * @param {string} statusValue status name to be assigned
@@ -21,6 +22,7 @@ module.exports = async (
     github,
     context,
     core,
+    organization = '',
     projectNumber,
     statusName = 'status',
     statusValue = 'todo',
@@ -39,7 +41,7 @@ module.exports = async (
     // get project data
     const projectDataQuery = fs.readFileSync(`${basePath}/graphql/projectData.gql`, 'utf8');
     const projectDataParams = {
-        owner: context.repo.owner,
+        owner: organization ? organization : context.repo.owner,
         number: projectNumber
     };
     let projectData
