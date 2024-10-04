@@ -1,107 +1,79 @@
 name: "Project Board Automation"
 description: "Automate GitHub Projects with ease"
+
 inputs:
   project:
     description: Project board number
     required: true
-    default: 1
+    default: "1"
   token:
     description: GitHub Token with org:write
     required: true
-  org:
-    description: Organization that owns the project
-    required: false
-    default: ${{ github.repository_owner }}
-  todo_status:
-    description: Name of the 'Todo' status on the project board
-    required: false
-    default: "Todo"
-  label:
+  todo_label:
     description: Initial label for new issues/PRs
     required: false
     default: "needs triage"
+  statusName:
+    description: Name of the 'status' field on the project board
+    required: false
+    default: status
+  statusValue:
+    description: Name of the 'todo' status on the project board
+    required: false
+    default: todo
+  includeEffort:
+    description: if true, set effort
+    required: false
+    default: 'true'
+  effortName:
+    description: Name of the 'effort' field on the project board
+    required: false
+    default: effort
+  effortMapping:
+    description: |
+      JSON string with map where: 
+        - string key is a valid 'effort' field value
+        - number value is maximum duration in days
+      for example: {"two days": 2, "workweek": 5}
+    required: false
+    default: '{"two days": 2, "workweek": 5}'
+  monthlyMilestoneName:
+    description: Name of the 'monthly milestone' field on the project board
+    required: false
+    default: monthly milestone
+  quarterlyMilestoneName:
+    description: Name of the 'quarterly milestone' field on the project board
+    required: false
+    default: quarterly milestone
+
 runs:
   using: "composite"
   steps:
     - name: Initial labeling
+      if: ${{ ! env.ACT_TEST }}
       uses: andymckay/labeler@e6c4322d0397f3240f0e7e30a33b5c5df2d39e90
       with:
-        add-labels: "${{ inputs.label }}"
+        add-labels: "${{ inputs.todo_label }}"
         ignore-if-assigned: true
         ignore-if-labeled: true
-
     - name: Fetch project data
-      run: |
-        set -x
-        gh api graphql -f query='
-          query ($org: String!, $num: Int!) {
-            organization(login: $org) {
-              projectV2(number: $num) {
-                id
-                fields(first: 20) {
-                  nodes {
-                    ... on ProjectV2SingleSelectField {
-                      id
-                      name
-                      options {
-                        id
-                        name
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }' -f org=$ORG -F num=${{ inputs.project }} > project_data.json
-
-        echo 'PROJECT_ID='$(jq -r '.data.organization.projectV2.id' project_data.json) >> $GITHUB_ENV
-        echo 'STATUS_FIELD_ID='$(jq -r '.data.organization.projectV2.fields.nodes[] | select(.name == "Status").id' project_data.json) >> $GITHUB_ENV
-        echo 'TODO_OPTION_ID='$(jq -r '.data.organization.projectV2.fields.nodes[] | select(.name == "Status").options[] | select(.name=="${{ inputs.todo_status }}").id' project_data.json) >> $GITHUB_ENV
-      env:
-        GITHUB_TOKEN: ${{ inputs.token }}
-        ORG: ${{ inputs.org }}
-      shell: bash
-
-    - name: Get issue/PR ID
-      run: |
-        if [[ "${{ github.event_name }}" == "pull_request" ]]; then
-            echo 'ISSUE_PR_ID='${{ github.event.pull_request.node_id }} >> $GITHUB_ENV
-        elif [[ "${{ github.event_name }}" == "issues" ]]; then
-            echo 'ISSUE_PR_ID='${{ github.event.issue.node_id }} >> $GITHUB_ENV
-        fi
-      shell: bash
-
-    - name: Move issue/PR to project
-      run: |
-        item_id="$( gh api graphql -f query='
-          mutation($project: ID!, $id: ID!) {
-            addProjectV2ItemById(input: {
-              projectId: $project,
-              contentId: $id,
-              }) {
-              item {
-                id
-              }
-            }
-          }' -f project=$PROJECT_ID -f id=$ISSUE_PR_ID --jq '.data.addProjectV2ItemById.item.id')"
-
-        echo 'ITEM_ID='$item_id >> $GITHUB_ENV
-      env:
-        GITHUB_TOKEN: ${{ inputs.token }}
-      shell: bash
-
-    - name: Set fields on project ticket
-      run: |
-        gh api graphql -f query='
-          mutation ($project: ID!, $item: ID!, $status_field: ID!, $status_value: String!) {
-            updateProjectV2ItemFieldValue(
-              input: {projectId: $project, itemId: $item, fieldId: $status_field, value: {singleSelectOptionId: $status_value}}
-            ) {
-              projectV2Item {
-                id
-              }
-            }
-          }' -f project=$PROJECT_ID -f item=$ITEM_ID -f status_field=$STATUS_FIELD_ID -f status_value=$TODO_OPTION_ID
-      env:
-        GITHUB_TOKEN: ${{ inputs.token }}
-      shell: bash
+      uses: actions/github-script@v7
+      id: runscript
+      with:
+        github-token: ${{ inputs.token }}
+        script: |
+          const script = require('${{ github.action_path }}/action.js')
+          await script(
+            github,
+            context,
+            core,
+            ${{ inputs.project }},
+            `${{ inputs.statusName }}`,
+            `${{ inputs.statusValue }}`,
+            ${{ inputs.includeEffort }},
+            `${{ inputs.effortName }}`,
+            `${{ inputs.effortMapping }}`,
+            `${{ inputs.monthlyMilestoneName }}`,
+            `${{ inputs.quarterlyMilestoneName }}`,
+            `${{ github.action_path }}`
+          )

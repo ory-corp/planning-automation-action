@@ -1,0 +1,17 @@
+{
+    "compilerOptions": {
+      "module": "commonjs",
+      "target": "ES6",
+      "checkJs": true,
+      "baseUrl": ".",
+      "paths": {
+        "@actions/*": ["node_modules/@actions/*"]
+      }
+    },
+    "exclude": [
+      "node_modules"
+    ],
+    "typeAcquisition": {
+        "enable": true
+    }
+}

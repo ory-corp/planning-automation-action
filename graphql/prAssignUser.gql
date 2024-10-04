@@ -1,0 +1,7 @@
+mutation ($assignee: ID!, $id: ID!) {
+  addAssigneesToAssignable(
+    input: { assigneeIds: [$assignee], assignableId: $id }
+  ) {
+    clientMutationId
+  }
+}
