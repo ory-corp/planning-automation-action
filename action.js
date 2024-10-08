@@ -226,7 +226,7 @@ module.exports = async (
         };
     };
 
-    if(!isPr || (!includeEffort && (isPr && !isDraftPr))) {
+    if (!isPr || (!isDraftPr && !includeEffort)) {
         const assignProjectFieldsQuery = fs.readFileSync(`${basePath}/graphql/projectNoEffortItemAssignFields.gql`, 'utf8');
         const assignProjectFieldsParams = {
             project: projectId,
