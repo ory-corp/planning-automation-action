@@ -205,8 +205,8 @@ module.exports = async (
     };
 
     // set milestones & effort
-    if (!isPr || (isPr && !isDraftPr)) {
-        const assignProjectFieldsQuery = fs.readFileSync(`${basePath}/graphql/projectItemAssignFields.gql`, 'utf8');
+    if (includeEffort && (isPr && !isDraftPr)) {
+        const assignProjectFieldsQuery = fs.readFileSync(`${basePath}/graphql/projectEffortItemAssignFields.gql`, 'utf8');
         const assignProjectFieldsParams = {
             project: projectId,
             item: projectItemId,
@@ -214,7 +214,6 @@ module.exports = async (
             status_value: statusValueId,
             effort_field: effortFieldId,
             effort_value: effortValueId,
-            effort_included: isPr && includeEffort,
             primary_milestone_field: monthlyMilestoneFieldId,
             primary_milestone_value: monthlyMilestoneValueId,
             secondary_milestone_field: quarterlyMilestoneFieldId,
@@ -226,6 +225,25 @@ module.exports = async (
             bail(error.message);
         };
     };
+
+    if(!isPr || (!includeEffort && (isPr && !isDraftPr))) {
+        const assignProjectFieldsQuery = fs.readFileSync(`${basePath}/graphql/projectNoEffortItemAssignFields.gql`, 'utf8');
+        const assignProjectFieldsParams = {
+            project: projectId,
+            item: projectItemId,
+            status_field: statusFieldId,
+            status_value: statusValueId,
+            primary_milestone_field: monthlyMilestoneFieldId,
+            primary_milestone_value: monthlyMilestoneValueId,
+            secondary_milestone_field: quarterlyMilestoneFieldId,
+            secondary_milestone_value: quarterlyMilestoneValueId
+        };
+        try {
+            await github.graphql(assignProjectFieldsQuery, assignProjectFieldsParams);
+        } catch (error) {
+            bail(error.message);
+        };
+    }
 }
 
 /**

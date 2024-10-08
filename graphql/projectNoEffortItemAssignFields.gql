@@ -3,9 +3,6 @@ mutation (
   $item: ID!
   $status_field: ID!
   $status_value: String!
-  $effort_field: ID!
-  $effort_value: String!
-  $effort_included: Boolean! = false
   $primary_milestone_field: ID!
   $primary_milestone_value: String!
   $secondary_milestone_field: ID!
@@ -19,18 +16,6 @@ mutation (
       value: { singleSelectOptionId: $status_value }
     }
   ) {
-    projectV2Item {
-      id
-    }
-  }
-  effort: updateProjectV2ItemFieldValue(
-    input: {
-      projectId: $project
-      itemId: $item
-      fieldId: $effort_field
-      value: { singleSelectOptionId: $effort_value }
-    }
-  ) @include(if: $effort_included) {
     projectV2Item {
       id
     }
