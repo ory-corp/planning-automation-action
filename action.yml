@@ -12,7 +12,7 @@ inputs:
   token:
     description: GitHub Token with org:write
     required: true
-  todo_label:
+  todoLabel:
     description: Initial label for new issues/PRs
     required: false
     default: "needs triage"
@@ -56,7 +56,7 @@ runs:
       if: ${{ ! env.ACT_TEST }}
       uses: andymckay/labeler@e6c4322d0397f3240f0e7e30a33b5c5df2d39e90
       with:
-        add-labels: "${{ inputs.todo_label }}"
+        add-labels: "${{ inputs.todoLabel }}"
         ignore-if-assigned: true
         ignore-if-labeled: true
     - name: Fetch project data
