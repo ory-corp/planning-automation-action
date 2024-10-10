@@ -12,7 +12,7 @@ It reacts to `issues` and `pull_request` events, and does the following:
 
 - `project`: Project board number (`github.com/orgs/foo/projects/N`)
 - `token`: A personal access token with write:org capabilities.
-- `todo_label`: Initial label for new issues/PRs. Defaults to `needs triage`.
+- `todoLabel`: Initial label for new issues/PRs. Defaults to `needs triage`.
 - `statusName`: Name of the 'status' field on the project board. Defaults to `status`.
 - `statusValue`: Name of the 'todo' status on the project board. Defaults to `needs triage`.
 - `effortName`: Name of the 'effort' field on the project board `effort`.
