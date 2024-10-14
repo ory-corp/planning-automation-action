@@ -25,6 +25,7 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           label: needs triage
           statusName: ${{ env.statusName }}
+          includeEffort: "false"
           statusValue: ${{ env.newItemStatus }}
           effortName: ${{ env.effortName }}
           effortMapping: ${{ env.effortMapping }}

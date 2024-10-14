@@ -139,73 +139,75 @@ module.exports = async (
             bail(error.message);
         };
 
-        // estimate effort if a PR
+        // get PR data
+        const prCommitDataQuery = fs.readFileSync(`${basePath}/graphql/prCommitData.gql`, 'utf8');
+        const prCommitDataParams = {
+            owner: context.repo.owner,
+            name: context.repo.repo,
+            number: context.payload.pull_request.number
+        };
+        let prCommitData
+        try {
+            let prAllData = await github.graphql(prCommitDataQuery, prCommitDataParams)
+            prCommitData = prAllData.repository.pullRequest.commits.nodes
+            isDraftPr = prAllData.repository.pullRequest.isDraft
+        } catch (error) {
+            bail(error.message);
+        };
+
+        // leave drafts alone
+        if (isDraftPr){
+            return
+        }
+
+        // move PR to project
+        const assignItemQuery = fs.readFileSync(`${basePath}/graphql/projectAssignPrIssue.gql`, 'utf8');
+        const assignItemParams = {
+            project: projectId,
+            id: prIssueId
+        };
+        try {
+            ({ addProjectV2ItemById: { item: { id: projectItemId } } } = await github.graphql(assignItemQuery, assignItemParams));
+        } catch (error) {
+            bail(error.message);
+        };
+
+        //  estimate effort if a PR
         if (includeEffort) {
-            // get PR data
-            const prCommitDataQuery = fs.readFileSync(`${basePath}/graphql/prCommitData.gql`, 'utf8');
-            const prCommitDataParams = {
-                owner: context.repo.owner,
-                name: context.repo.repo,
-                number: context.payload.pull_request.number
+            // get weekdays since PR's first commit
+            let prCreatedAt = new Date()
+            prCommitData.forEach(commit => {
+                const commitDate = new Date(commit.commit.authoredDate)
+                if (commitDate < prCreatedAt) {
+                    prCreatedAt = commitDate
+                }
+            });
+            const workingDaysSinceCreated = countWorkingDaysSince(new Date(prCreatedAt));
+
+            // map days spent to effort size pattern
+            let milestonePattern;
+            for (const [pattern, dayCount] of Object.entries(JSON.parse(effortMapping))) {
+                if (workingDaysSinceCreated < dayCount) {
+                    milestonePattern = pattern;
+                    break;
+                }
             };
-            let prCommitData
-            try {
-                let prAllData = await github.graphql(prCommitDataQuery, prCommitDataParams)
-                prCommitData = prAllData.repository.pullRequest.commits.nodes
-                isDraftPr = prAllData.repository.pullRequest.isDraft
-            } catch (error) {
-                bail(error.message);
-            };
 
-            // move PR to project
-            if (!isDraftPr) {
-                const assignItemQuery = fs.readFileSync(`${basePath}/graphql/projectAssignPrIssue.gql`, 'utf8');
-                const assignItemParams = {
-                    project: projectId,
-                    id: prIssueId
+            // select effort ID based on pattern
+            projectFieldOptions.forEach(field => {
+                if (field.name === effortName) {
+                    effortFieldId = field.id;
+                    field.options.forEach(effort => {
+                        if (effort.name.toLowerCase().includes(milestonePattern.toLowerCase()))
+                            effortValueId = effort.id;
+                    });
                 };
-                try {
-                    ({ addProjectV2ItemById: { item: { id: projectItemId } } } = await github.graphql(assignItemQuery, assignItemParams));
-                } catch (error) {
-                    bail(error.message);
-                };
-
-
-                // get weekdays since PR's first commit
-                let prCreatedAt = new Date()
-                prCommitData.forEach(commit => {
-                    const commitDate = new Date(commit.commit.authoredDate)
-                    if (commitDate < prCreatedAt) {
-                        prCreatedAt = commitDate
-                    }
-                });
-                const workingDaysSinceCreated = countWorkingDaysSince(new Date(prCreatedAt));
-
-                // map days spent to effort size pattern
-                let milestonePattern;
-                for (const [pattern, dayCount] of Object.entries(JSON.parse(effortMapping))) {
-                    if (workingDaysSinceCreated < dayCount) {
-                        milestonePattern = pattern;
-                        break;
-                    }
-                };
-
-                // select effort ID based on pattern
-                projectFieldOptions.forEach(field => {
-                    if (field.name === effortName) {
-                        effortFieldId = field.id;
-                        field.options.forEach(effort => {
-                            if (effort.name.toLowerCase().includes(milestonePattern.toLowerCase()))
-                                effortValueId = effort.id;
-                        });
-                    };
-                });
-            };
+            });
         };
     };
 
-    // set milestones & effort
-    if (includeEffort && (isPr && !isDraftPr)) {
+    // set milestones & effort if a PR and includeEffort
+    if (includeEffort && isPr) {
         const assignProjectFieldsQuery = fs.readFileSync(`${basePath}/graphql/projectEffortItemAssignFields.gql`, 'utf8');
         const assignProjectFieldsParams = {
             project: projectId,
@@ -226,7 +228,8 @@ module.exports = async (
         };
     };
 
-    if (!isPr || (!isDraftPr && !includeEffort)) {
+    // set milestones if an Issue or if a PR and not includeEffort
+    if (!isPr || !includeEffort) {
         const assignProjectFieldsQuery = fs.readFileSync(`${basePath}/graphql/projectNoEffortItemAssignFields.gql`, 'utf8');
         const assignProjectFieldsParams = {
             project: projectId,
