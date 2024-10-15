@@ -157,6 +157,7 @@ module.exports = async (
 
         // leave drafts alone
         if (isDraftPr){
+            coreGlob.info("detected PR draft, skipping project assignment");
             return
         }
 
@@ -226,6 +227,7 @@ module.exports = async (
         } catch (error) {
             bail(error.message);
         };
+        coreGlob.info("set project fields including effort");
     };
 
     // set milestones if an Issue or if a PR and not includeEffort
@@ -246,6 +248,7 @@ module.exports = async (
         } catch (error) {
             bail(error.message);
         };
+        coreGlob.info("set project fields omitting effort");
     }
 }
 
