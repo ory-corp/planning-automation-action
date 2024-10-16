@@ -207,8 +207,7 @@ module.exports = async (
         };
     };
 
-    // set status, milestones & maybe effort if a PR
-    if (isPr) {
+    if (isPr) { // set status, milestones & maybe effort if a PR
         if (includeEffort) {
             const assignProjectFieldsQuery = fs.readFileSync(`${basePath}/graphql/projectEffortItemAssignFields.gql`, 'utf8');
             const assignProjectFieldsParams = {
@@ -249,10 +248,8 @@ module.exports = async (
             };
             coreGlob.info("set project fields omitting effort");
         }
-    }
-
-    // set status if an Issue
-    if (!isPr) {
+    } 
+    else { // set status if an Issue
         const assignProjectFieldsQuery = fs.readFileSync(`${basePath}/graphql/projectIssueItemAssignFields.gql`, 'utf8');
         const assignProjectFieldsParams = {
             project: projectId,
