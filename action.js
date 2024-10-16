@@ -156,7 +156,7 @@ module.exports = async (
         };
 
         // leave drafts alone
-        if (isDraftPr){
+        if (isDraftPr) {
             coreGlob.info("detected PR draft, skipping project assignment");
             return
         }
@@ -207,48 +207,60 @@ module.exports = async (
         };
     };
 
-    // set milestones & effort if a PR and includeEffort
-    if (includeEffort && isPr) {
-        const assignProjectFieldsQuery = fs.readFileSync(`${basePath}/graphql/projectEffortItemAssignFields.gql`, 'utf8');
+    if (isPr) { // set status, milestones & maybe effort if a PR
+        if (includeEffort) {
+            const assignProjectFieldsQuery = fs.readFileSync(`${basePath}/graphql/projectEffortItemAssignFields.gql`, 'utf8');
+            const assignProjectFieldsParams = {
+                project: projectId,
+                item: projectItemId,
+                status_field: statusFieldId,
+                status_value: statusValueId,
+                effort_field: effortFieldId,
+                effort_value: effortValueId,
+                primary_milestone_field: monthlyMilestoneFieldId,
+                primary_milestone_value: monthlyMilestoneValueId,
+                secondary_milestone_field: quarterlyMilestoneFieldId,
+                secondary_milestone_value: quarterlyMilestoneValueId
+            };
+            try {
+                await github.graphql(assignProjectFieldsQuery, assignProjectFieldsParams);
+            } catch (error) {
+                bail(error.message);
+            };
+            coreGlob.info("set project fields including effort");
+        } else {
+            const assignProjectFieldsQuery = fs.readFileSync(`${basePath}/graphql/projectNoEffortItemAssignFields.gql`, 'utf8');
+            const assignProjectFieldsParams = {
+                project: projectId,
+                item: projectItemId,
+                status_field: statusFieldId,
+                status_value: statusValueId,
+                primary_milestone_field: monthlyMilestoneFieldId,
+                primary_milestone_value: monthlyMilestoneValueId,
+                secondary_milestone_field: quarterlyMilestoneFieldId,
+                secondary_milestone_value: quarterlyMilestoneValueId
+            };
+            try {
+                await github.graphql(assignProjectFieldsQuery, assignProjectFieldsParams);
+            } catch (error) {
+                bail(error.message);
+            };
+            coreGlob.info("set project fields omitting effort");
+        }
+    } else { // set status if an Issue
+        const assignProjectFieldsQuery = fs.readFileSync(`${basePath}/graphql/projectIssueItemAssignFields.gql`, 'utf8');
         const assignProjectFieldsParams = {
             project: projectId,
             item: projectItemId,
             status_field: statusFieldId,
             status_value: statusValueId,
-            effort_field: effortFieldId,
-            effort_value: effortValueId,
-            primary_milestone_field: monthlyMilestoneFieldId,
-            primary_milestone_value: monthlyMilestoneValueId,
-            secondary_milestone_field: quarterlyMilestoneFieldId,
-            secondary_milestone_value: quarterlyMilestoneValueId
         };
         try {
             await github.graphql(assignProjectFieldsQuery, assignProjectFieldsParams);
         } catch (error) {
             bail(error.message);
         };
-        coreGlob.info("set project fields including effort");
-    };
-
-    // set milestones if an Issue or if a PR and not includeEffort
-    if (!isPr || !includeEffort) {
-        const assignProjectFieldsQuery = fs.readFileSync(`${basePath}/graphql/projectNoEffortItemAssignFields.gql`, 'utf8');
-        const assignProjectFieldsParams = {
-            project: projectId,
-            item: projectItemId,
-            status_field: statusFieldId,
-            status_value: statusValueId,
-            primary_milestone_field: monthlyMilestoneFieldId,
-            primary_milestone_value: monthlyMilestoneValueId,
-            secondary_milestone_field: quarterlyMilestoneFieldId,
-            secondary_milestone_value: quarterlyMilestoneValueId
-        };
-        try {
-            await github.graphql(assignProjectFieldsQuery, assignProjectFieldsParams);
-        } catch (error) {
-            bail(error.message);
-        };
-        coreGlob.info("set project fields omitting effort");
+        coreGlob.info("set project fields omitting effort & milestones");
     }
 }
 
