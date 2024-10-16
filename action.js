@@ -228,8 +228,7 @@ module.exports = async (
                 bail(error.message);
             };
             coreGlob.info("set project fields including effort");
-        }
-        else {
+        } else {
             const assignProjectFieldsQuery = fs.readFileSync(`${basePath}/graphql/projectNoEffortItemAssignFields.gql`, 'utf8');
             const assignProjectFieldsParams = {
                 project: projectId,
@@ -248,8 +247,7 @@ module.exports = async (
             };
             coreGlob.info("set project fields omitting effort");
         }
-    } 
-    else { // set status if an Issue
+    } else { // set status if an Issue
         const assignProjectFieldsQuery = fs.readFileSync(`${basePath}/graphql/projectIssueItemAssignFields.gql`, 'utf8');
         const assignProjectFieldsParams = {
             project: projectId,
