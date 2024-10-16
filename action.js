@@ -230,8 +230,8 @@ module.exports = async (
         coreGlob.info("set project fields including effort");
     };
 
-    // set milestones if an Issue or if a PR and not includeEffort
-    if (!isPr || !includeEffort) {
+    // set milestones if a PR and not includeEffort
+    if (!includeEffort && isPr) {
         const assignProjectFieldsQuery = fs.readFileSync(`${basePath}/graphql/projectNoEffortItemAssignFields.gql`, 'utf8');
         const assignProjectFieldsParams = {
             project: projectId,
@@ -249,6 +249,23 @@ module.exports = async (
             bail(error.message);
         };
         coreGlob.info("set project fields omitting effort");
+    }
+
+    // set milestones if an Issue
+    if (!isPr) {
+        const assignProjectFieldsQuery = fs.readFileSync(`${basePath}/graphql/projectIssueItemAssignFields.gql`, 'utf8');
+        const assignProjectFieldsParams = {
+            project: projectId,
+            item: projectItemId,
+            status_field: statusFieldId,
+            status_value: statusValueId,
+        };
+        try {
+            await github.graphql(assignProjectFieldsQuery, assignProjectFieldsParams);
+        } catch (error) {
+            bail(error.message);
+        };
+        coreGlob.info("set project fields omitting effort & milestones");
     }
 }
 
