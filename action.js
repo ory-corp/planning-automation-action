@@ -33,7 +33,7 @@ module.exports = async (
     quarterlyMilestoneName = 'quarterly milestone',
     basePath = '.'
 ) => {
-    coreGlob = core
+    coreGlob = core;
     if (typeof projectNumber !== 'number')
         bail("missing params");
     const fs = require('fs');
@@ -44,17 +44,17 @@ module.exports = async (
         owner: organization ? organization : context.repo.owner,
         number: projectNumber
     };
-    let projectData
+    let projectData;
     try {
         projectData = await github.graphql(projectDataQuery, projectDataParams);
     } catch (error) {
         bail(error.message);
     };
     if (!projectData.organization.projectV2.fields.nodes)
-        bail("couldn't retrieve project fields")
+        bail("couldn't retrieve project fields");
     const projectFieldOptions = projectData.organization.projectV2.fields.nodes;
     if (!projectData.organization.projectV2.id)
-        bail("couldn't retrieve project graphql id")
+        bail("couldn't retrieve project graphql id");
     const projectId = projectData.organization.projectV2.id;
 
     // get todo status
@@ -98,12 +98,12 @@ module.exports = async (
         isPr = true;
 
     // get PR / Issue id
-    const prIssueId = await getPrIssueId(github, context)
+    const prIssueId = await getPrIssueId(github, context);
     if (!prIssueId)
         bail("couldn't get ID of PR/Issue");
 
     // move Issue to project
-    let projectItemId
+    let projectItemId;
     if (!isPr) {
         const assignItemQuery = fs.readFileSync(`${basePath}/graphql/projectAssignPrIssue.gql`, 'utf8');
         const assignItemParams = {
@@ -117,9 +117,10 @@ module.exports = async (
         };
     };
 
-    let effortFieldId
-    let effortValueId
-    let isDraftPr
+    let effortFieldId;
+    let effortValueId;
+    let effortHumanReadable;
+    let isDraftPr;
     if (isPr) {
         // assign author if a PR
         const assigneeData = await github.rest.users.getByUsername({
@@ -146,11 +147,11 @@ module.exports = async (
             name: context.repo.repo,
             number: context.payload.pull_request.number
         };
-        let prCommitData
+        let prCommitData;
         try {
-            let prAllData = await github.graphql(prCommitDataQuery, prCommitDataParams)
-            prCommitData = prAllData.repository.pullRequest.commits.nodes
-            isDraftPr = prAllData.repository.pullRequest.isDraft
+            let prAllData = await github.graphql(prCommitDataQuery, prCommitDataParams);
+            prCommitData = prAllData.repository.pullRequest.commits.nodes;
+            isDraftPr = prAllData.repository.pullRequest.isDraft;
         } catch (error) {
             bail(error.message);
         };
@@ -158,7 +159,7 @@ module.exports = async (
         // leave drafts alone
         if (isDraftPr) {
             coreGlob.info("detected PR draft, skipping project assignment");
-            return
+            return;
         }
 
         // move PR to project
@@ -176,11 +177,11 @@ module.exports = async (
         //  estimate effort if a PR
         if (includeEffort) {
             // get weekdays since PR's first commit
-            let prCreatedAt = new Date()
+            let prCreatedAt = new Date();
             prCommitData.forEach(commit => {
-                const commitDate = new Date(commit.commit.authoredDate)
+                const commitDate = new Date(commit.commit.authoredDate);
                 if (commitDate < prCreatedAt) {
-                    prCreatedAt = commitDate
+                    prCreatedAt = commitDate;
                 }
             });
             const workingDaysSinceCreated = countWorkingDaysSince(new Date(prCreatedAt));
@@ -199,8 +200,10 @@ module.exports = async (
                 if (field.name === effortName) {
                     effortFieldId = field.id;
                     field.options.forEach(effort => {
-                        if (effort.name.toLowerCase().includes(milestonePattern.toLowerCase()))
+                        if (effort.name.toLowerCase().includes(milestonePattern.toLowerCase())) {
                             effortValueId = effort.id;
+                            effortHumanReadable = effort.name;
+                        };
                     });
                 };
             });
@@ -227,6 +230,13 @@ module.exports = async (
             } catch (error) {
                 bail(error.message);
             };
+            await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.payload.pull_request.number,
+                body: `Effort has been estimated to ${effortHumanReadable}.
+                    This is based on date of first commit and mapping: ${effortMapping}`
+            });
             coreGlob.info("set project fields including effort");
         } else {
             const assignProjectFieldsQuery = fs.readFileSync(`${basePath}/graphql/projectNoEffortItemAssignFields.gql`, 'utf8');
@@ -269,7 +279,7 @@ module.exports = async (
  */
 function bail(msg) {
     coreGlob.setFailed(msg);
-    throw new Error(msg)
+    throw new Error(msg);
 }
 
 /**
@@ -294,7 +304,7 @@ function countWorkingDaysSince(startDate) {
  * @returns {string} node_id of iteration entry matching current date
  */
 function getCurrentIteration(iterations) {
-    let monthlyMilestoneValueId
+    let monthlyMilestoneValueId;
     iterations.forEach(iteration => {
         const now = new Date();
         const startDate = new Date(iteration.startDate);
@@ -303,7 +313,7 @@ function getCurrentIteration(iterations) {
         if (startDate < now && now < endDate)
             monthlyMilestoneValueId = iteration.id;
     });
-    return monthlyMilestoneValueId
+    return monthlyMilestoneValueId;
 }
 
 /**
