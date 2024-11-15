@@ -20,7 +20,11 @@ inputs:
     description: Name of the 'status' field on the project board
     required: false
     default: status
-  statusValue:
+  prStatusValue:
+    description: Name of the 'todo' status on the project board
+    required: false
+    default: todo
+  issueStatusValue:
     description: Name of the 'todo' status on the project board
     required: false
     default: todo
@@ -74,7 +78,8 @@ runs:
             `${{ inputs.organization }}`,
             ${{ inputs.project }},
             `${{ inputs.statusName }}`,
-            `${{ inputs.statusValue }}`,
+            `${{ inputs.prStatusValue }}`,
+            `${{ inputs.issueStatusValue }}`,
             ${{ inputs.includeEffort }},
             `${{ inputs.effortName }}`,
             `${{ inputs.effortMapping }}`,
