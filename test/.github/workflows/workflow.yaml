@@ -26,7 +26,8 @@ jobs:
           label: needs triage
           statusName: ${{ env.statusName }}
           includeEffort: "true"
-          statusValue: ${{ env.newItemStatus }}
+          prStatusValue: ${{ env.newPrStatus }}
+          issueStatusValue: ${{ env.newIssueStatus }}
           effortName: ${{ env.effortName }}
           effortMapping: ${{ env.effortMapping }}
           monthlyMilestoneName: ${{ env.monthlyMilestoneName }}
