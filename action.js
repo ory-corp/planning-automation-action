@@ -10,7 +10,8 @@ let coreGlob
  * @param {string} organization GitHub organization name
  * @param {number} projectNumber project ID as seen in project board URL
  * @param {string} statusName status field name to be set
- * @param {string} statusValue status name to be assigned
+ * @param {string} prStatusValue PR status name to be assigned
+ * @param {string} issueStatusValue Issue status name to be assigned
  * @param {Boolean} includeEffort if true, set effort
  * @param {string} effortName effort field name to be set
  * @param {string} effortMapping JSON effort name - days map
@@ -25,7 +26,8 @@ module.exports = async (
     organization = '',
     projectNumber,
     statusName = 'status',
-    statusValue = 'todo',
+    prStatusValue = 'todo',
+    issueStatusValue = 'todo',
     includeEffort = true,
     effortName = 'effort',
     effortMapping = '{"two days": 2, "workweek": 5}',
@@ -59,14 +61,21 @@ module.exports = async (
 
     // get todo status
     let statusFieldId;
-    let statusValueId;
+    let prStatusValueId;
+    let issueStatusValueId;
     projectFieldOptions.forEach(field => {
         if (field.name === statusName) {
             statusFieldId = field.id;
             field.options.forEach(status => {
-                if (status.name.toLowerCase().includes(statusValue.toLowerCase()))
-                    statusValueId = status.id;
+                if (status.name.toLowerCase().includes(prStatusValue.toLowerCase()))
+                    prStatusValueId = status.id;
+                if (status.name.toLowerCase().includes(issueStatusValue.toLowerCase()))
+                    issueStatusValueId = status.id;
             });
+            if (!prStatusValueId)
+                bail("cannot find PR target status")
+            if (!issueStatusValueId)
+                bail("cannot find Issue target status")
         };
     });
 
@@ -194,7 +203,9 @@ module.exports = async (
                     break;
                 }
             };
-
+            if (!milestonePattern) {
+                bail("cannot estimate effort")
+            }
             // select effort ID based on pattern
             projectFieldOptions.forEach(field => {
                 if (field.name === effortName) {
@@ -217,7 +228,7 @@ module.exports = async (
                 project: projectId,
                 item: projectItemId,
                 status_field: statusFieldId,
-                status_value: statusValueId,
+                status_value: prStatusValueId,
                 effort_field: effortFieldId,
                 effort_value: effortValueId,
                 primary_milestone_field: monthlyMilestoneFieldId,
@@ -244,7 +255,7 @@ module.exports = async (
                 project: projectId,
                 item: projectItemId,
                 status_field: statusFieldId,
-                status_value: statusValueId,
+                status_value: prStatusValueId,
                 primary_milestone_field: monthlyMilestoneFieldId,
                 primary_milestone_value: monthlyMilestoneValueId,
                 secondary_milestone_field: quarterlyMilestoneFieldId,
@@ -263,7 +274,7 @@ module.exports = async (
             project: projectId,
             item: projectItemId,
             status_field: statusFieldId,
-            status_value: statusValueId,
+            status_value: issueStatusValueId,
         };
         try {
             await github.graphql(assignProjectFieldsQuery, assignProjectFieldsParams);

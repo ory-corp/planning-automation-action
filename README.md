@@ -14,7 +14,8 @@ It reacts to `issues` and `pull_request` events, and does the following:
 - `token`: A personal access token with write:org capabilities.
 - `todoLabel`: Initial label for new issues/PRs. Defaults to `needs triage`.
 - `statusName`: Name of the 'status' field on the project board. Defaults to `status`.
-- `statusValue`: Name of the 'todo' status on the project board. Defaults to `needs triage`.
+- `prStatusValue`: Name of the 'todo' status on the project board. Defaults to `todo`.
+- `issueStatusValue`: Name of the 'todo' status on the project board. Defaults to `todo`.
 - `effortName`: Name of the 'effort' field on the project board `effort`.
 - `effortMapping`: JSON string with map where:
   - string key is a valid 'effort' field value
@@ -47,7 +48,8 @@ jobs:
           token: ${{ secrets.PLANNING_AUTOMATION_TOKEN }}
           todo_label: needs triage
           statusName: status
-          statusValue: needs triage
+          prStatusValue: todo
+          issueStatusValue: todo
           effortName: effort
           effortMapping: '{"two days": 2, "workweek": 5}'
           monthlyMilestoneName: monthly milestone
