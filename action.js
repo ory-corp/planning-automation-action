@@ -30,7 +30,7 @@ module.exports = async (
     issueStatusValue = 'todo',
     includeEffort = true,
     effortName = 'effort',
-    effortMapping = '{"two days": 2, "workweek": 5}',
+    effortMapping = '[{"pattern": "two days", "value": 2},{"pattern": "the longest one", "value": 1e1000}]',
     monthlyMilestoneName = 'monthly milestone',
     quarterlyMilestoneName = 'quarterly milestone',
     basePath = '.'
@@ -126,9 +126,7 @@ module.exports = async (
         };
     };
 
-    let effortFieldId;
-    let effortValueId;
-    let effortHumanReadable;
+    let effortMessage;
     let isDraftPr;
     if (isPr) {
         // assign author if a PR
@@ -187,6 +185,7 @@ module.exports = async (
         if (includeEffort) {
             // get weekdays since PR's first commit
             let prCreatedAt = new Date();
+            effortMessage = `Please set effort on project item card:\n\n`;
             prCommitData.forEach(commit => {
                 const commitDate = new Date(commit.commit.authoredDate);
                 if (commitDate < prCreatedAt) {
@@ -197,23 +196,38 @@ module.exports = async (
 
             // map days spent to effort size pattern
             let milestonePattern;
-            for (const [pattern, dayCount] of Object.entries(JSON.parse(effortMapping))) {
-                if (workingDaysSinceCreated < dayCount) {
-                    milestonePattern = pattern;
+            let effortMappingObj = JSON.parse(effortMapping);
+            for (const element of effortMappingObj) {
+                if (workingDaysSinceCreated < element.value) {
+                    milestonePattern = element.pattern;
                     break;
                 }
             };
             if (!milestonePattern) {
-                bail("cannot estimate effort")
-            }
-            // select effort ID based on pattern
+                bail("cannot estimate effort");
+            };
+            // list human-readable efforts
             projectFieldOptions.forEach(field => {
                 if (field.name === effortName) {
-                    effortFieldId = field.id;
+                    field.options.forEach(effort => {
+                        effortMappingObj.forEach(element => {
+                            if (effort.name.toLowerCase().includes(element.pattern.toLowerCase())) {
+                                if (element.value !== Infinity) {
+                                    effortMessage += `  - ${effort.name}: ${element.value} day(s) or less,\n`;
+                                } else {
+                                    effortMessage += `  - ${effort.name}: longer than any of above.\n`;
+                                };
+                            }
+                        });
+                    });
+                };
+            });
+            // suggest an effort value
+            projectFieldOptions.forEach(field => {
+                if (field.name === effortName) {
                     field.options.forEach(effort => {
                         if (effort.name.toLowerCase().includes(milestonePattern.toLowerCase())) {
-                            effortValueId = effort.id;
-                            effortHumanReadable = effort.name;
+                            effortMessage += `\nBased on first commit date, ${effort.name} should be adequate.`;
                         };
                     });
                 };
@@ -221,51 +235,32 @@ module.exports = async (
         };
     };
 
-    if (isPr) { // set status, milestones & maybe effort if a PR
+    if (isPr) { // set status, milestones & notify about effort if a PR
+        const assignProjectFieldsQuery = fs.readFileSync(`${basePath}/graphql/projectNoEffortItemAssignFields.gql`, 'utf8');
+        const assignProjectFieldsParams = {
+            project: projectId,
+            item: projectItemId,
+            status_field: statusFieldId,
+            status_value: prStatusValueId,
+            primary_milestone_field: monthlyMilestoneFieldId,
+            primary_milestone_value: monthlyMilestoneValueId,
+            secondary_milestone_field: quarterlyMilestoneFieldId,
+            secondary_milestone_value: quarterlyMilestoneValueId
+        };
+        try {
+            await github.graphql(assignProjectFieldsQuery, assignProjectFieldsParams);
+        } catch (error) {
+            bail(error.message);
+        };
         if (includeEffort) {
-            const assignProjectFieldsQuery = fs.readFileSync(`${basePath}/graphql/projectEffortItemAssignFields.gql`, 'utf8');
-            const assignProjectFieldsParams = {
-                project: projectId,
-                item: projectItemId,
-                status_field: statusFieldId,
-                status_value: prStatusValueId,
-                effort_field: effortFieldId,
-                effort_value: effortValueId,
-                primary_milestone_field: monthlyMilestoneFieldId,
-                primary_milestone_value: monthlyMilestoneValueId,
-                secondary_milestone_field: quarterlyMilestoneFieldId,
-                secondary_milestone_value: quarterlyMilestoneValueId
-            };
-            try {
-                await github.graphql(assignProjectFieldsQuery, assignProjectFieldsParams);
-            } catch (error) {
-                bail(error.message);
-            };
             await github.rest.issues.createComment({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 issue_number: context.payload.pull_request.number,
-                body: `Effort has been estimated to ${effortHumanReadable}.
-                    This is based on date of first commit and mapping: ${effortMapping}`
+                body: effortMessage
             });
-            coreGlob.info("set project fields including effort");
+            coreGlob.info("set project fields suggesting effort");
         } else {
-            const assignProjectFieldsQuery = fs.readFileSync(`${basePath}/graphql/projectNoEffortItemAssignFields.gql`, 'utf8');
-            const assignProjectFieldsParams = {
-                project: projectId,
-                item: projectItemId,
-                status_field: statusFieldId,
-                status_value: prStatusValueId,
-                primary_milestone_field: monthlyMilestoneFieldId,
-                primary_milestone_value: monthlyMilestoneValueId,
-                secondary_milestone_field: quarterlyMilestoneFieldId,
-                secondary_milestone_value: quarterlyMilestoneValueId
-            };
-            try {
-                await github.graphql(assignProjectFieldsQuery, assignProjectFieldsParams);
-            } catch (error) {
-                bail(error.message);
-            };
             coreGlob.info("set project fields omitting effort");
         }
     } else { // set status if an Issue

@@ -41,9 +41,9 @@ inputs:
       JSON string with map where: 
         - string key is a valid 'effort' field value
         - number value is maximum duration in days
-      for example: {"two days": 2, "workweek": 5}
+      for example: [{"pattern": "two days", "value": 2},{"pattern": "the longest one", "value": 1e1000}]
     required: false
-    default: '{"two days": 2, "workweek": 5}'
+    default: '[{"pattern": "two days", "value": 2},{"pattern": "the longest one", "value": 1e1000}]'
   monthlyMilestoneName:
     description: Name of the 'monthly milestone' field on the project board
     required: false

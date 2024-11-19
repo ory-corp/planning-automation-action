@@ -20,7 +20,9 @@ It reacts to `issues` and `pull_request` events, and does the following:
 - `effortMapping`: JSON string with map where:
   - string key is a valid 'effort' field value
   - number value is maximum duration in days
-  for example: {"two days": 2, "workweek": 5}. Defaults to `{"two days": 2, "workweek": 5}`.
+  for example: {"two days": 2, "workweek": 5}.  
+  Defaults to `[{"pattern": "two days", "value": 2},{"pattern": "the longest one", "value": 1e1000}]`.  
+  `1e1000` is JSON for `Infinity`
 - `monthlyMilestoneName`: Name of the 'monthly milestone' field on the project board. Defaults to `monthly milestone`.
 - `quarterlyMilestoneName`: Name of the 'quarterly milestone' field on the project board. Defaults to `quarterly milestone`.
 
