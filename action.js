@@ -181,31 +181,10 @@ module.exports = async (
             bail(error.message);
         };
 
-        //  estimate effort if a PR
+        //  comment on effort if a PR
         if (includeEffort) {
-            // get weekdays since PR's first commit
-            let prCreatedAt = new Date();
-            effortMessage = `Please set effort on project item card:\n\n`;
-            prCommitData.forEach(commit => {
-                const commitDate = new Date(commit.commit.authoredDate);
-                if (commitDate < prCreatedAt) {
-                    prCreatedAt = commitDate;
-                }
-            });
-            const workingDaysSinceCreated = countWorkingDaysSince(new Date(prCreatedAt));
-
-            // map days spent to effort size pattern
-            let milestonePattern;
             let effortMappingObj = JSON.parse(effortMapping);
-            for (const element of effortMappingObj) {
-                if (workingDaysSinceCreated < element.value) {
-                    milestonePattern = element.pattern;
-                    break;
-                }
-            };
-            if (!milestonePattern) {
-                bail("cannot estimate effort");
-            };
+            effortMessage = `Please set effort on project item card:\n\n`;
             // list human-readable efforts
             projectFieldOptions.forEach(field => {
                 if (field.name === effortName) {
@@ -219,16 +198,6 @@ module.exports = async (
                                 };
                             }
                         });
-                    });
-                };
-            });
-            // suggest an effort value
-            projectFieldOptions.forEach(field => {
-                if (field.name === effortName) {
-                    field.options.forEach(effort => {
-                        if (effort.name.toLowerCase().includes(milestonePattern.toLowerCase())) {
-                            effortMessage += `\nBased on first commit date, ${effort.name} should be adequate.`;
-                        };
                     });
                 };
             });
