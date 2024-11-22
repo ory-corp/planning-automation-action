@@ -190,7 +190,7 @@ module.exports = async (
                 if (field.name === effortName) {
                     field.options.forEach(effort => {
                         effortMappingObj.forEach(element => {
-                            if (effort.name.toLowerCase().includes(element.pattern.toLowerCase())) {
+                            if (effort.name.toLowerCase() === element.pattern.toLowerCase()) {
                                 if (element.value !== Infinity) {
                                     effortMessage += `  - ${effort.name}: ${element.value} day(s) or less,\n`;
                                 } else {
