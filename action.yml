@@ -64,26 +64,38 @@ runs:
         ignore-if-assigned: true
         ignore-if-labeled: true
     - name: Fetch project data
-      uses: actions/github-script@v7
+      uses: actions/github-script@f28e40c7f34bde8b3046d885e986cb6290c5673b # v7.1.0
       if: ${{ github.actor != 'dependabot[bot]' }}
       id: runscript
+      env:
+        PLANNING_AUTOMATION_ACTION_PATH: ${{ github.action_path }}
+        PLANNING_AUTOMATION_ORGANIZATION: ${{ inputs.organization }}
+        PLANNING_AUTOMATION_PROJECT: ${{ inputs.project }}
+        PLANNING_AUTOMATION_STATUS_NAME: ${{ inputs.statusName }}
+        PLANNING_AUTOMATION_PR_STATUS_VALUE: ${{ inputs.prStatusValue }}
+        PLANNING_AUTOMATION_ISSUE_STATUS_VALUE: ${{ inputs.issueStatusValue }}
+        PLANNING_AUTOMATION_INCLUDE_EFFORT: ${{ inputs.includeEffort }}
+        PLANNING_AUTOMATION_EFFORT_NAME: ${{ inputs.effortName }}
+        PLANNING_AUTOMATION_EFFORT_MAPPING: ${{ inputs.effortMapping }}
+        PLANNING_AUTOMATION_MONTHLY_MILESTONE_NAME: ${{ inputs.monthlyMilestoneName }}
+        PLANNING_AUTOMATION_QUARTERLY_MILESTONE_NAME: ${{ inputs.quarterlyMilestoneName }}
       with:
         github-token: ${{ inputs.token }}
         script: |
-          const script = require('${{ github.action_path }}/action.js')
+          const script = require(`${process.env.PLANNING_AUTOMATION_ACTION_PATH}/action.js`)
           await script(
             github,
             context,
             core,
-            `${{ inputs.organization }}`,
-            ${{ inputs.project }},
-            `${{ inputs.statusName }}`,
-            `${{ inputs.prStatusValue }}`,
-            `${{ inputs.issueStatusValue }}`,
-            ${{ inputs.includeEffort }},
-            `${{ inputs.effortName }}`,
-            `${{ inputs.effortMapping }}`,
-            `${{ inputs.monthlyMilestoneName }}`,
-            `${{ inputs.quarterlyMilestoneName }}`,
-            `${{ github.action_path }}`
+            process.env.PLANNING_AUTOMATION_ORGANIZATION,
+            Number(process.env.PLANNING_AUTOMATION_PROJECT),
+            process.env.PLANNING_AUTOMATION_STATUS_NAME,
+            process.env.PLANNING_AUTOMATION_PR_STATUS_VALUE,
+            process.env.PLANNING_AUTOMATION_ISSUE_STATUS_VALUE,
+            process.env.PLANNING_AUTOMATION_INCLUDE_EFFORT === 'true',
+            process.env.PLANNING_AUTOMATION_EFFORT_NAME,
+            process.env.PLANNING_AUTOMATION_EFFORT_MAPPING,
+            process.env.PLANNING_AUTOMATION_MONTHLY_MILESTONE_NAME,
+            process.env.PLANNING_AUTOMATION_QUARTERLY_MILESTONE_NAME,
+            process.env.PLANNING_AUTOMATION_ACTION_PATH
           )

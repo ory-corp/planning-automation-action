@@ -15,3 +15,8 @@ test: deps
 	cp -f action.js test/.github/actions/planning-automation-action/
 	cp -f action.yml test/.github/actions/planning-automation-action/
 	cd test && ./test.sh
+
+.PHONY: test-security
+test-security:
+	node --check action.js
+	node test/security.test.js

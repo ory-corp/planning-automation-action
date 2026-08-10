@@ -44,7 +44,8 @@ jobs:
     runs-on: ubuntu-latest
     name: Synchronize Issues and PRs
     steps:
-      - uses: ory-corp/planning-automation-action@main
+      # Replace COMMIT_SHA with the full 40-character SHA for the release you use.
+      - uses: ory-corp/planning-automation-action@COMMIT_SHA
         with:
           project: 9
           token: ${{ secrets.PLANNING_AUTOMATION_TOKEN }}
@@ -59,6 +60,8 @@ jobs:
 ```
 
 ## Testing
+
+Run `make test-security` for the dependency pin and input-handling regression tests. These tests do not require credentials.
 
 This action can be run from localhost against existing PR, repo and project to confirm that it works as intended.
 Create files `.secrets` and `.env` based on sample files and adjust prData.json
